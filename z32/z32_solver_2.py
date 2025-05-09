@@ -45,7 +45,7 @@ QGRAM = {"TION":126024, "THER":113290, "HERE":96550, "WITH":70160, "IGHT":77290}
 QTOT = sum(QGRAM.values())
 QLOG = {k: math.log10(v/QTOT) for k,v in QGRAM.items()}
 QFLOOR = math.log10(0.01/QTOT)
-CRIBS = {'STATION':50, 'THERE':30, 'WITH':25, 'HERE':20, 'THREE':20}
+CRIBS = {}#{'STATION':50, 'THERE':30, 'WITH':25, 'HERE':20, 'THREE':20}
 
 # Preliminary statistics
 def compute_stats(text):
@@ -100,6 +100,12 @@ def generate_routes(cipher, W, H, colperm):
         for r in rng:
             if mat[r][c] not in ['?','□']: out.append(mat[r][c])
     seqs['col-serp'] = out
+    # mixed: first half row-serp + second half col-serp
+    row_seq = seqs['row-serp']
+    col_seq = seqs['col-serp']
+    mid = len(row_seq)//2
+    mixed_seq = row_seq[:mid] + col_seq[mid:]
+    seqs['mixed'] = mixed_seq
     return seqs
 
 # Simulated annealing
@@ -165,14 +171,13 @@ def main():
             for name, seq in generate_routes(CIPHER, W, H, colperm).items():
                 print(f"[CONFIG] W={W}, H={H}, route={name}, colperm={colperm}")
                 # SA grid
-
                 for steps,restarts,T0,alpha,cp in sa_params:
                     best_s = -1e9; best_p=""
                     for r in range(restarts):
                         p,s=anneal(seq,steps,T0,alpha,cp)
-                        if s>best_s: best_s, best_p = s,p
+                        if s > best_s: best_s, best_p = s,p
                     print(f"SA W={W}, H={H}, colperm={colperm}, name={name}, restarts={restarts}, T0={T0}, alpha={alpha}, cp={cp}, best_s={best_s}, best_p={best_p}")
-                    records.append(['SA',W,H,colperm,name,steps,restarts,T0,alpha,cp,best_s,best_p])
+                    records.append(['SA',W, H, colperm, name, steps, restarts, T0, alpha, cp, best_s, best_p])
                 # GA grid
                 for pop,gens,ef, mr in ga_params:
                     p,s = run_ga(seq,pop,gens,ef,mr)
