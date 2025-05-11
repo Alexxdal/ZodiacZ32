@@ -38,12 +38,14 @@ O_WITH_DOT = '0'        # Carattere O con puntino al centro
 INVERSE_J = '8'         # J specchiata
 HALF_SHADE_SQUARE = '9' # Quadrato pieno con un angolo bianco
 ZODIAC_SYMBOL = '2'     # Simbolo di zodiac cerchio con croce
+OTTO_IN_ZERO = '6'      # Simbolo usato in Z13 che sembra un 8 dentro uno zero oppure segno zodiacale cancro o ariete?
 
+Z13 = "AEN" + ZODIAC_SYMBOL + OTTO_IN_ZERO + "K" + OTTO_IN_ZERO + "M" + OTTO_IN_ZERO + ANCORA + "NAM"
 Z32 = "C" + SHADE_TRIANGLE + "JI" + FULL_SQUARE + "O" + INVERSE_K + ANCORA + "AM" + INVERSE_F + FULL_TRIANGLE + OMEGA + "ORTGX" + O_WITH_DOT + "FDV" + INVERSE_J + HALF_SHADE_SQUARE + "HCEL" + ZODIAC_SYMBOL + "PW" + SHADE_TRIANGLE
 
 # 1. Load ciphers
 previous_ciphers = {
-    'Z13': "...",  # placeholder for the Z13 cipher text
+    'Z13': Z13,  # placeholder for the Z13 cipher text
     'Z408': "...", # placeholder for the Z408 cipher text
     'Z340': "...", # placeholder for the Z340 cipher text
     'Z32': Z32  # the Z32 cipher to solve
@@ -51,7 +53,7 @@ previous_ciphers = {
 CIPHER = previous_ciphers['Z32']  # select the Z32 ciphertext for processing
 
 # 2. Define grid dims and column permutations
-GRIDS_DIMENSION = [(17, 2), (4, 8), (8, 4)]  # possible grid shapes: width x height
+GRIDS_DIMENSION = [(32, 1), (4, 8), (8, 4)]  # possible grid shapes: width x height
 
 # 3. Scoring data: quadgrams and cribs
 QUADGRAMS = {}
@@ -68,7 +70,7 @@ with open('quadgrams.txt', 'r') as f:
 TOTAL_QUADGRAMS = sum(QUADGRAMS.values())  # total quadgram counts
 QLOG = {k: math.log10(v / TOTAL_QUADGRAMS) for k, v in QUADGRAMS.items()}  # log frequencies
 QFLOOR = math.log10(0.01 / TOTAL_QUADGRAMS)  # floor log score for unseen quadgrams
-CRIBS = { }  # {'STATION': 50, 'THERE': 30, 'WITH': 25, 'HERE': 20, 'THREE': 20}  # bonus scores for known words
+CRIBS = {'INCHES': 50, 'RADIANS': 50}  # bonus scores for known words
 
 
 # Compute preliminary statistics on the ciphertext
@@ -168,6 +170,14 @@ def anneal(seq, steps, T0, alpha, cycle_prob):
     return cur,cur_s, mapping
 
 
+def apply_mapping(cipher_text, mapping):
+    """
+    Applica il dizionario mapping al testo cifrato, sostituendo
+    ogni simbolo con la corrispondente lettera in chiaro o '?' se non mappato.
+    """
+    return ''.join(mapping.get(sym, '?') for sym in cipher_text)
+
+
 # Genetic Algorithm solver
 def run_ga(seq, pop, gens, elite_frac, mut_rate, seed_plain=None):
     symbols = seq
@@ -234,7 +244,8 @@ def main():
                         p, s, mapping = anneal(seq, steps, T0, alpha, cp)
                         if s > best_s:
                             best_s, best_p = s, p
-                            print(f"[BEST] score={best_s}, text={best_p}, map= {mapping}")
+                            compare = apply_mapping(previous_ciphers['Z13'], mapping)
+                            print(f"[BEST] score={best_s}, text={best_p},Z13={compare}, map= {mapping}")
                     records.append(['SA', GRID_W, GRID_H, colperm, name, steps, restarts, T0, alpha, cp, best_s, best_p])
                 # GA grid search
                 for pop, gens, ef, mr in ga_params:
